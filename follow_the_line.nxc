@@ -1,0 +1,101 @@
+float tolerance_factor = 0.2;
+
+int current_left_sensity;
+int current_right_sensity;
+int last_change_sensity;
+int tolerance_sensity;
+
+int energy_turn = 40;
+int energy_forward = 70;
+
+bool last_change_was_left;
+bool last_change_was_right;
+
+bool current_left_black;
+bool current_right_black;
+
+task main()
+{
+  SetSensorLight(IN_1);
+  SetSensorLight(IN_2);
+  last_change_was_left = false;
+  last_change_was_right = false;
+
+  last_change_sensity = 25;
+
+  while (true)
+  {
+    current_left_black = false;
+    current_right_black = false;
+
+    current_left_sensity = Sensor(IN_1);
+    current_right_sensity = Sensor(IN_2);
+
+    // als erstes schauen wir ob einer unserer sensoren
+    // über einer schwarzen linie ist
+
+
+    tolerance_sensity = last_change_sensity * tolerance_factor;
+
+    // linker sensor
+    if(current_left_sensity <= last_change_sensity + tolerance_sensity) {
+      current_left_black = true;
+      last_change_was_left = true;
+    }
+    if(current_right_sensity <= last_change_sensity + tolerance_sensity) {
+      current_right_black = true;
+      last_change_was_right = true;
+    }
+
+    // Wir überprüfen ob einer der Sensoren ist über einer linie
+    if(current_left_black == true || current_right_black == true) {
+      // Einer der Sensoren ist über einer Linie, so falls der andere
+      // das nicht ist, setzen wir last_change_x auf false
+      if(current_left_black == false) {
+        last_change_was_left = false;
+      }
+      if(current_right_black == false) {
+        last_change_was_right = false;
+      }
+
+
+      /*if(current_left_black > 10 || current_right_black > 10){
+        // Zudem wollen wir auch last_change_sensity setzen
+        if(current_left_black == true && current_right_black == true) {
+          // Falls unter beiden Sensoren die Linie ist, wollen wir den höheren Wert
+          // nehmen, sollte eigentlich eh nicht passieren :P
+          if(current_left_black >= current_right_black) {
+            last_change_sensity = current_left_sensity;
+          }else{
+            last_change_sensity = current_right_sensity;
+          }
+        }else if(current_left_black == true) {
+          last_change_sensity = current_left_sensity;
+        }else{
+          // current_right_black == true
+          last_change_sensity = current_right_sensity;
+        }
+      }*/
+    }
+
+    if(current_left_black == false && current_right_black == false){
+      OnFwd(OUT_AB, energy_forward);
+    }else if(current_left_black == false && current_right_black == true){
+      OnFwd(OUT_AB, 0);
+      OnFwd(OUT_B, energy_turn);
+    }else if(current_left_black == true && current_right_black == false){
+      OnFwd(OUT_AB, 0);
+      OnFwd(OUT_A, energy_turn);
+    }else if(current_left_black == true && current_right_black == true) {
+      OnFwd(OUT_AB, 20);
+    }
+
+    TextOut(0, 60,"Tolerance: "+NumToStr(tolerance_sensity));
+    TextOut(0, 50, "LSensity: "+NumToStr(current_left_sensity));
+    TextOut(0, 40, "RSensity: "+NumToStr(current_right_sensity));
+    TextOut(0, 30, "CLBlack: "+NumToStr(current_left_black));
+    TextOut(0, 20, "CRBlack: "+NumToStr(current_right_black));
+    TextOut(0, 10, "LCSens: "+NumToStr(last_change_sensity));
+    //Wait();
+  }
+}

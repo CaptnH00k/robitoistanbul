@@ -1,0 +1,12 @@
+
+int light;
+
+task main()
+{
+  SetSensorLight(IN_1);
+  while (true)
+  {
+    light = Sensor(IN_1);
+    TextOut(0, 0, "SensorLight: "+NumToStr(light));
+  }
+}
