@@ -1,0 +1,158 @@
+int energy_turn = 40;
+int energy_forward = 50;
+
+int constant_on_line = 40;
+
+int MODE_FWD = 1;
+int MODE_LEFT = 2;
+int MODE_RIGHT = 3;
+
+bool debug = false;
+bool execute = true;
+
+int heartbeat = 0;
+
+// Returns true if the sensity is smaller equal than constant_on_line
+bool isOnLine(int sensity) {
+  if(sensity <= constant_on_line) {
+    return true;
+  }
+  return false;
+}
+
+string ModeToStr(int mode) {
+  if(mode == MODE_FWD){
+    return "MODE_FWD";
+  }else if(mode == MODE_LEFT) {
+    return "MODE_LEFT";
+  }else if(mode == MODE_RIGHT){
+    return "MODE_RIGHT";
+  }else {
+    return "UNKOWN_MODE";
+  }
+}
+
+task main() {
+  SetSensorLight(IN_1);
+  SetSensorLight(IN_2);
+
+  int current_left_sensity;
+  int current_right_sensity;
+
+  bool current_left_black;
+  bool current_right_black;
+
+  int last_left_black;
+  int last_right_black;
+  int mode = 0;
+
+  string message;
+
+  while(true) {
+    message = "";
+    current_left_sensity = Sensor(IN_1);
+    current_right_sensity = Sensor(IN_2);
+
+    current_left_black = isOnLine(current_left_sensity);
+    current_right_black = isOnLine(current_right_sensity);
+
+    if(current_left_black == true && current_right_black == false) {
+      // Left is true, Right is false
+      if(last_left_black == true && last_right_black == false) {
+        // last left is true, last right is false
+        // we can safely turn left
+        mode = MODE_LEFT;
+      } else if(last_left_black == false && last_right_black == true) {
+        // last lefft is false, last right is true
+        // between two heartbeats, something weird happend. We want to do what
+        // we did last time, turn right
+        mode = MODE_RIGHT;
+      } else if(last_left_black == false && last_right_black == false) {
+        // First time we regcognize the turn, so safely turn left
+        mode = MODE_LEFT;
+      } else if(last_left_black == true && last_right_black == true) {
+        // Puuh shit happend or something in last heart beat, we go on
+        mode = MODE_LEFT;
+      }
+    }else if(current_left_black == false && current_right_black == true) {
+      // Left is false, right is true
+      if(last_left_black == true && last_right_black == false) {
+        // last left is true, last right false
+        // between two heartbeats something weird happend, we want to do what
+        // we did last time, turn left
+        mode = MODE_LEFT;
+      } else if(last_left_black == false && last_right_black == true) {
+        // last left is false, last right true
+        // we are still in a turn
+        mode = MODE_RIGHT;
+      } else if(last_left_black == false && last_right_black == false) {
+        // first time we regcognize the turn
+        mode = MODE_RIGHT;
+      } else if(last_left_black == true && last_right_black == true) {
+        // shit happend, but just go on...
+        mode = MODE_RIGHT;
+      }
+    } else if(current_left_black == false && current_right_black == false) {
+      // Left is false, right is false
+      if(last_left_black == true && last_right_black == false) {
+
+
+      } else if(last_left_black == false && last_right_black == true) {
+
+      } else if(last_left_black == false && last_right_black == false) {
+
+      } else if(last_left_black == true && last_right_black == true) {
+
+      }
+      mode = MODE_FWD;
+    } else if(current_left_black == true && current_right_black == true) {
+      if(last_left_black == true && last_right_black == false) {
+
+      } else if(last_left_black == false && last_right_black == true) {
+
+      } else if(last_left_black == false && last_right_black == false) {
+
+      } else if(last_left_black == true && last_right_black == true) {
+
+      }
+      mode = MODE_LEFT;
+    }
+
+    // Execute the Mode
+    if(execute == true) {
+      if(mode == MODE_FWD) {
+        OnFwd(OUT_AB, energy_forward);
+      } else if(mode == MODE_LEFT) {
+        OnFwd(OUT_A, energy_turn);
+        OnFwd(OUT_B, -energy_turn);
+      } else if(mode == MODE_RIGHT) {
+        OnFwd(OUT_A, -energy_turn);
+        OnFwd(OUT_B, energy_turn);
+      }
+    }
+
+
+    // Set last_ variables
+    last_left_black = current_left_black;
+    last_right_black = current_right_black;
+
+    // debug stuff
+    if(debug == true) {
+      message = "[DEBUG]" + message;
+    }
+    if(execute == false) {
+      message = "[NO_EXEC]" + message;
+    }
+
+    // increase heart beat
+    heartbeat++;
+    TextOut(0, LCD_LINE1, "  "+message);
+    TextOut(0, LCD_LINE2, "LSens: "+NumToStr(current_left_sensity));
+    TextOut(0, LCD_LINE3, "RSens: "+NumToStr(current_right_sensity));
+    TextOut(0, LCD_LINE4, "LBlack: "+NumToStr(current_left_black));
+    TextOut(0, LCD_LINE5, "RBLack: "+NumToStr(current_right_black));
+    TextOut(0, LCD_LINE6, "Heartbeat: "+NumToStr(heartbeat));
+    TextOut(0, LCD_LINE7, "Mode: "+ModeToStr(mode)+"           ");
+
+  }
+}

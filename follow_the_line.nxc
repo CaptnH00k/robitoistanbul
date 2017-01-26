@@ -5,8 +5,8 @@ int current_right_sensity;
 int last_change_sensity;
 int tolerance_sensity;
 
-int energy_turn = 40;
-int energy_forward = 70;
+int energy_turn = -50;
+int energy_forward = -70;
 
 bool last_change_was_left;
 bool last_change_was_right;
@@ -21,7 +21,7 @@ task main()
   last_change_was_left = false;
   last_change_was_right = false;
 
-  last_change_sensity = 25;
+  last_change_sensity = 40;
 
   while (true)
   {

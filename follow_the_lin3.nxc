@@ -1,0 +1,104 @@
+// Follow the line with 3 Sensors
+
+int energy_turn = 40;
+int energy_forward = 100;
+
+int constant_on_line = 40;
+
+bool debug = false;
+
+int heartbeat = 0;
+
+// Returns true if the sensity is smaller equal than constant_on_line
+bool isOnLine(int sensity) {
+  if(sensity <= constant_on_line) {
+    return true;
+  }
+  return false;
+}
+
+
+task main() {
+  SetSensorLight(IN_1);
+  SetSensorLight(IN_2);
+  SetSensorLight(IN_3);
+
+
+  int current_left_sensity;
+  int current_middle_sensity;
+  int current_right_sensity;
+
+  bool current_left_black;
+  bool current_middle_black;
+  bool current_right_black;
+
+  int last_left_black;
+  int last_middle_black;
+  int last_right_black;
+
+  string message;
+  while (true) {
+
+    message = "NULL";
+    current_left_sensity = Sensor(IN_1);
+    current_middle_sensity = Sensor(IN_2);
+    current_right_sensity = Sensor(IN_3);
+
+    current_left_black = isOnLine(current_left_sensity);
+    current_middle_black = isOnLine(current_middle_sensity);
+    current_right_black = isOnLine(current_right_sensity);
+
+    if(current_middle_black == true) {
+      // current_middle_black is true, so we are somehow on the line
+      if(current_left_black == true && current_right_black == false) {
+        // left is true, but right not. So we turn left forward and the right backwards
+        if(debug == false) {
+          OnFwd(OUT_A, energy_turn);
+          OnFwd(OUT_B, -energy_turn);
+        }
+        message = "ON_LINE_TURN_LEFT";
+
+      }else if(current_left_black == false && current_right_black == true) {
+        // left is false, but right true. So we turn left backwards and right forward
+        if(debug == false) {
+          OnFwd(OUT_A, -energy_turn);
+          OnFwd(OUT_B, energy_turn);
+        }
+        message = "ON_LINE_TURN_RIGHT";
+      }else if(current_left_black == true && current_right_black == true) {
+        // left is true and right is true. So we are somehow with all 3 sensors on the line
+        // Turn left backwards and right forward?!
+        if(debug == false) {
+          OnFwd(OUT_A, -energy_turn);
+          OnFwd(OUT_B, energy_turn);
+        }
+        message = "ON_LINE_FUCKED_BOTH";
+      } else if(current_left_black == false && current_right_black == false) {
+        // left is false and right is false. So we are only with the middle sensor on the line,
+        // power forward!
+        if(debug == false) {
+          OnFwd(OUT_AB, energy_forward);
+        }
+        message = "ON_LINE_FORWARD";
+      }
+    } else {
+
+
+    }
+    if(debug == true) {
+      message = "[DEBG] " + message;
+    }
+    TextOut(0, LCD_LINE1, "  "+message);
+    TextOut(0, LCD_LINE2, "LSens: "+NumToStr(current_left_sensity));
+    TextOut(0, LCD_LINE3, "MSens: "+NumToStr(current_middle_sensity));
+    TextOut(0, LCD_LINE4, "RSens: "+NumToStr(current_right_sensity));
+    TextOut(0, LCD_LINE5, "LBlack: "+NumToStr(current_left_black));
+    TextOut(0, LCD_LINE6, "MBlack: "+NumToStr(current_middle_black));
+    TextOut(0, LCD_LINE7, "RBLack: "+NumToStr(current_right_black));
+    TextOut(0, LCD_LINE8, "Heartbeat: "+NumToStr(heartbeat));
+
+    // Increase pulses
+    heartbeat = heartbeat + 1;
+
+  }
+}
