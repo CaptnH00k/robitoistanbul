@@ -6,15 +6,18 @@ int speed_oops_backward = -55;
 int speed_oops_right = -40; //right wheel
 int speed_oops_left = -55; // left wheel
 
-int current_left_value;
-int current_right_value;
+int MODE_GO_STRAIGHT = 1;
+int MODE_TURN_LEFT = 2;
+int MODE_TURN_RIGHT = 3;
+int MODE_OOOPS = 4;
 
 
-sub fix_me(){
+
+sub fix_me(int current_left_value, int current_right_value){
 /* when the NXT encounters black on both sensors this function tries to fix it
 by moving backwards and turning until exactly one sensor is on black.
 */
-     while(current_left_value < light_threshold && current_right_value < light_threshold){
+    while(current_left_value < light_threshold && current_right_value < light_threshold){
                               OnFwd(OUT_B, -speed_oops_left);
                               OnFwd(OUT_A, -speed_oops_right);
                               int i = 0;
@@ -42,26 +45,31 @@ task main() {
 
 
      int mode = 0;
-     int MODE_GO_STRAIGHT = 1;
-     int MODE_TURN_LEFT = 2;
-     int MODE_TURN_RIGHT = 3;
-     int MODE_OOOPS = 4;
+
+     int current_left_value;
+     int current_right_value;
+
+     bool current_left_black;
+     bool current_right_black;
 
      while(true){
                  current_left_value = Sensor(IN_1);
                  current_right_value = Sensor(IN_2);
 
+                 current_left_black = current_left_value < light_threshold;
+                 current_right_black = current_right_value < light_threshold;
+
                  // check the value of both sensors, compare them with light threshold and set the mode.
-                 if (current_left_value >= light_threshold && current_right_value >= light_threshold){
+                 if (current_left_black == false && current_right_black == false){
                      mode = MODE_GO_STRAIGHT;
                  }
-                 else if (current_left_value < light_threshold && current_right_value >= light_threshold){
+                 else if (current_left_black == true && current_right_black == false){
                      mode = MODE_TURN_LEFT;
                  }
-                 else if (current_left_value >= light_threshold && current_right_value < light_threshold){
+                 else if (current_left_black == false && current_right_black == true){
                      mode = MODE_TURN_RIGHT;
                  }
-                 else if (current_left_value < light_threshold && current_right_value < light_threshold){
+                 else if (current_left_black == true && current_right_black == true){
                      mode = MODE_OOOPS;
                  }
 
@@ -79,7 +87,7 @@ task main() {
                      OnFwd(OUT_B, speed_turn_high);
                  }
                  else if(mode == MODE_OOOPS){
-                      fix_me();
+                      fix_me(current_left_value, current_right_value);
                  }
 
                  // HERE: check if touch button is pressed call grab function
