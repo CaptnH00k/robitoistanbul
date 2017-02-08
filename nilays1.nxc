@@ -1,0 +1,89 @@
+int light_threshold = 35;
+int speed_forward = 70;
+int speed_turn_high = 50;
+int speed_turn_low = -45;
+int speed_oops_backward = -55;
+int speed_oops_A = -40; //right wheel
+int speed_oops_B = -55; // left wheel
+
+int current_left_value;
+int current_right_value;
+
+
+sub fix_me(){
+/* when the NXT encounters black on both sensors this function tries to fix it
+by moving backwards and turning until exactly one sensor is on black.
+*/
+     while(current_left_value < light_threshold && current_right_value < light_threshold){
+                              OnFwd(OUT_B, -speed_oops_B);
+                              OnFwd(OUT_A, -speed_oops_A);
+                              int i = 0;
+                              while(i<5000){i++;}
+                              current_left_value = Sensor(IN_1);
+                              current_right_value= Sensor(IN_2);
+
+                              while(current_left_value >= light_threshold && current_right_value >= light_threshold){
+                                                       int i = 0;
+                                                       while(i<10000){i++;}
+                                                       OnFwd(OUT_A, speed_oops_backward);
+                                                       OnFwd(OUT_B, speed_oops_backward);
+                                                       current_left_value = Sensor(IN_1);
+                                                       current_right_value = Sensor(IN_2);
+                              }
+     }
+     return;
+}
+
+// HERE: grab function (grab the ball and turn around)
+
+task main() {
+     SetSensorLight(IN_1);
+     SetSensorLight(IN_2);
+
+
+     string mode = "";
+     string go_straight = "go straight";
+     string turn_left = "turn left";
+     string turn_right = "turn right";
+     string oops = "oops";
+
+     while(true){
+                 current_left_value = Sensor(IN_1);
+                 current_right_value = Sensor(IN_2);
+
+                 // check the value of both sensors, compare them with light threshold and set the mode.
+                 if (current_left_value >= light_threshold && current_right_value >= light_threshold){
+                     mode = go_straight;
+                 }
+                 else if (current_left_value < light_threshold && current_right_value >= light_threshold){
+                     mode = turn_left;
+                 }
+                 else if (current_left_value >= light_threshold && current_right_value < light_threshold){
+                     mode = turn_right;
+                 }
+                 else if (current_left_value < light_threshold && current_right_value < light_threshold){
+                     mode = oops;
+                 }
+
+
+                 //drive motors according to modes.
+                 if( mode == go_straight){
+                     OnFwd(OUT_AB, speed_forward);
+                 }
+                 else if( mode == turn_left){
+                     OnFwd(OUT_A, speed_turn_high);
+                     OnFwd(OUT_B, speed_turn_low);
+                 }
+                 else if( mode == turn_right){
+                     OnFwd(OUT_A, speed_turn_low);
+                     OnFwd(OUT_B, speed_turn_high);
+                 }
+                 else if(mode == oops){
+                      fix_me();
+                 }
+
+                 // HERE: check if touch button is pressed call grab function
+
+
+     }
+}
